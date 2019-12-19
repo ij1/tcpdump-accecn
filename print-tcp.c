@@ -110,6 +110,7 @@ static const struct tok tcp_flag_values[] = {
         { TH_URG, "U" },
         { TH_ECNECHO, "E" },
         { TH_CWR, "W" },
+        { TH_AE, "A" },
         { 0, NULL }
 };
 
@@ -163,7 +164,7 @@ tcp_print(netdissect_options *ndo,
 {
         register const struct tcphdr *tp;
         register const struct ip *ip;
-        register u_char flags;
+        register uint16_t flags;
         register u_int hlen;
         register char ch;
         uint16_t sport, dport, win, urp;
@@ -238,7 +239,7 @@ tcp_print(netdissect_options *ndo,
                 return;
         }
 
-        flags = tp->th_flags;
+        flags = tp->th_flags | ((tp->th_offx2 & 0xf) << 8);
         ND_PRINT((ndo, "Flags [%s]", bittok2str_nosep(tcp_flag_values, "none", flags)));
 
         if (!ndo->ndo_Sflag && (flags & TH_ACK)) {

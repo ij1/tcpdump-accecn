@@ -61,6 +61,7 @@ struct tcphdr {
 #define	TH_URG	   0x20
 #define TH_ECNECHO 0x40	/* ECN Echo */
 #define TH_CWR	   0x80	/* ECN Cwnd Reduced */
+#define TH_AE	  0x100 /* Accurate ECN */
 
 
 #define	TCPOPT_EOL		0
