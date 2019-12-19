@@ -63,6 +63,8 @@ static int tcp_verify_signature(netdissect_options *ndo,
 static void print_tcp_rst_data(netdissect_options *, register const u_char *sp, u_int length);
 static void print_tcp_fastopen_option(netdissect_options *ndo, register const u_char *cp,
                                       u_int datalen, int exp);
+static void print_tcp_accecn_option(netdissect_options *ndo, register const u_char *cp,
+                                    u_int datalen, int order, int exp);
 
 #define MAX_RST_DATA_LEN	30
 
@@ -618,6 +620,10 @@ tcp_print(netdissect_options *ndo,
                                 case 0xf989: /* TCP Fast Open RFC 7413 */
                                         print_tcp_fastopen_option(ndo, cp + 2, datalen - 2, TRUE);
                                         break;
+                                case 0xacc0:
+                                case 0xacc1:
+                                        print_tcp_accecn_option(ndo, cp + 2, datalen - 2, magic & 0x1, TRUE);
+                                        break;
 
                                 default:
                                         /* Unknown magic number */
@@ -831,6 +837,36 @@ print_tcp_fastopen_option(netdissect_options *ndo, register const u_char *cp,
                         ND_PRINT((ndo, " cookie "));
                         for (i = 0; i < datalen; ++i)
                                 ND_PRINT((ndo, "%02x", cp[i]));
+                }
+        }
+}
+
+char *accecn_count[2][3] = {
+        { "e0b", "ceb", "e1b" },
+        { "e1b", "ceb", "e0b" },
+};
+
+static void
+print_tcp_accecn_option(netdissect_options *ndo, register const u_char *cp,
+                        u_int datalen, int order, int exp)
+{
+        u_int i;
+
+        if (exp)
+                ND_PRINT((ndo, "AccECN%d", order));
+
+        if (datalen == 0) {
+                ND_PRINT((ndo, " emptylen"));
+        } else {
+                if (datalen % 3)
+                        ND_PRINT((ndo, " invalidlen"));
+                for (i = 0; i < 3; i++) {
+                        if (datalen < 3)
+                                break;
+                        ND_PRINT((ndo, " %s %u", accecn_count[order][i],
+                                 (cp[0] << 16) | (cp[1] << 8) | cp[2] ));
+                        datalen -= 3;
+                        cp += 3;
                 }
         }
 }
